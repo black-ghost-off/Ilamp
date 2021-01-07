@@ -5,29 +5,31 @@
 #include <WiFi.h>
 #include <TimeLib.h>
 
-#define debug 0
+#define debug 0 //unused
 
-const char* ssid     = "LTE 5G";
-const char* password = "pass2411";
+const char* ssid     = "..."; //SSID вашего WIFI
+const char* password = "...";// пароль
 
-const char* host = "192.168.0.103";
+const char* host = "192.168.0.103"; // IP сервера на котором стоит TIMESTAMP
 
-int UTC_offset = 60*60*2;
+int UTC_offset = 60*60*2; // Сдвиг отсносительно нулевого мередиана
 
-#define NUM_LEDS 24
-#define DATA_PIN 13
+#define NUM_LEDS 24 // количество WS2812b
+#define DATA_PIN 13 // Управляющий пин
 
 CRGB leds[NUM_LEDS];
 
 int timestamp = now();
-event sunrise = event(60*60*6.5, 60*60*7);
+
+event sunrise = event(60*60*6.5, 60*60*7); // обьявления расвета, заката, дня, ночи. Используется своя библиотека TIMELINE.
 event pday = event(60*60*7, 60*60*21.5);
 event sunset = event(60*60*21.5, 60*60*22);
 event night = event(60*60*22,60*60*6.5);
+
 effects eff = effects(NUM_LEDS, leds);
 
 
-int timestampget(){
+int timestampget(){ // функция для синхронизациия времени
 
     Serial.print("connecting to ");
     Serial.println(host);
@@ -60,7 +62,7 @@ int timestampget(){
     return line.toInt();
 }
 
-void timesync(void *pvParameters) {
+void timesync(void *pvParameters) { // функция для вызову синхронизации времени в мультипоточном режиме.
   for(;;){
       delay(5000);
       int retu = timestampget();
@@ -75,7 +77,7 @@ void timesync(void *pvParameters) {
 }
 
 void setup() {
-    pinMode(2, OUTPUT);
+    pinMode(2, OUTPUT); 
     Serial.begin(115200);
 
     WiFi.begin(ssid, password);
