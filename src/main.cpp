@@ -4,10 +4,6 @@
 #include "effects.cpp"
 #include <WiFi.h>
 #include <TimeLib.h>
-#include <DS3231.h>
-#include <Wire.h>
-#include <WiFiUdp.h>
-#include <ArduinoOTA.h>
 
 #define debug 0
 
@@ -22,8 +18,6 @@ int UTC_offset = 60*60*2;
 #define DATA_PIN 13
 
 CRGB leds[NUM_LEDS];
-
-DS3231 Clock;
 
 int timestamp = now();
 event sunrise = event(60*60*6.5, 60*60*7);
@@ -68,7 +62,6 @@ int timestampget(){
 
 void timesync(void *pvParameters) {
   for(;;){
-      ArduinoOTA.handle();
       delay(5000);
       int retu = timestampget();
       if (retu == 0) {
@@ -82,10 +75,9 @@ void timesync(void *pvParameters) {
 }
 
 void setup() {
-    Wire.begin();
     pinMode(2, OUTPUT);
     Serial.begin(115200);
-    WiFi.mode(WIFI_STA);
+
     WiFi.begin(ssid, password);
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -97,33 +89,6 @@ void setup() {
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
-
-    ArduinoOTA
-      .onStart([]() {
-        String type;
-        if (ArduinoOTA.getCommand() == U_FLASH)
-          type = "sketch";
-        else // U_SPIFFS
-          type = "filesystem";
-
-        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-        Serial.println("Start updating " + type);
-      })
-      .onEnd([]() {
-        Serial.println("\nEnd");
-      })
-      .onProgress([](unsigned int progress, unsigned int total) {
-        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-      })
-      .onError([](ota_error_t error) {
-        Serial.printf("Error[%u]: ", error);
-        if (error == OTA_AUTH_ERROR) {Serial.println("Auth Failed");digitalWrite(2, HIGH);}
-        else if (error == OTA_BEGIN_ERROR) {Serial.println("Begin Failed");digitalWrite(2, HIGH);}
-        else if (error == OTA_CONNECT_ERROR) {Serial.println("Connect Failed");digitalWrite(2, HIGH);}
-        else if (error == OTA_RECEIVE_ERROR) {Serial.println("Receive Failed");digitalWrite(2, HIGH);}
-        else if (error == OTA_END_ERROR) {Serial.println("End Failed");digitalWrite(2, HIGH);}
-      });
-    ArduinoOTA.begin();
 
     setTime(timestampget());
     xTaskCreatePinnedToCore (timesync,"TASK_1",4096,NULL, 1, NULL, 0);
@@ -140,9 +105,11 @@ void loop() {
     eff.tick();
 
     timestamp = now() + UTC_offset;
+    // Serial.println(timestamp);
     if (pday.between()) {
         eff.mode = 5;
         FastLED.setBrightness(255);
+        // Serial.println("day");
     }
 
     if (sunset.between()) {
@@ -153,10 +120,12 @@ void loop() {
             leds[i] = CRGB(map(blend, 0,255, 255, leds[i].r), map(blend, 0,255, 0, leds[i].g), map(blend, 0,255, 0, leds[i].b));
         }
         FastLED.setBrightness(blend);
+        // Serial.println("sunset");
     }
     if (night.between()) {
         eff.mode = 4;
         FastLED.setBrightness(0);
+        // Serial.println("night");
     }
     if (sunrise.between()) {
         eff.mode = 0;
@@ -166,6 +135,7 @@ void loop() {
             leds[i] = CRGB(map(blend, 0,255, 255, leds[i].r), map(blend, 0,255, 0, leds[i].g), map(blend, 0,255, 0, leds[i].b));
         }
         FastLED.setBrightness(blend);
+        // Serial.println("sunrise");
     }
     FastLED.show();
 }
