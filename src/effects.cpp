@@ -18,6 +18,8 @@ class effects{
             blades = new uint8_t[num];
             NUM_LED = num;
         }
+    
+        // генерация ефекта.
         void tick(){
             frame++;
             draw_time = millis() - last_draw;
@@ -38,7 +40,7 @@ class effects{
                 case 7: set_color(CRGB::White); noise_h(100, 10, 128); break;
             }
         }
-        void set_color(CRGB color){ //поставить цвет
+        void set_color(CRGB color){ //Set color
             for (int i = 0; i < NUM_LED; i++) {
                 leds[i] = color;
             }
