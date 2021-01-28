@@ -34,7 +34,7 @@ int timestampget(){ // функция для синхронизациия вре
     Serial.print("connecting to ");
     Serial.println(host);
 
-    // Use WiFiClient class to create TCP connections
+    // Использование WIFI для создание TCP клиента к сокет серверу
     WiFiClient client;
     const int httpPort = 81;
     if (!client.connect(host, httpPort)) {
@@ -51,7 +51,7 @@ int timestampget(){ // функция для синхронизациия вре
         }
     }
 
-    // Read all the lines of the reply from server and print them to Serial
+    // Чтение данных и передача их в Serial для анализа
     String line;
     while(client.available()) {
         line = client.readStringUntil('\r');
@@ -62,7 +62,7 @@ int timestampget(){ // функция для синхронизациия вре
     return line.toInt();
 }
 
-void timesync(void *pvParameters) { // функция для вызову синхронизации времени в мультипоточном режиме.
+void timesync(void *pvParameters) { // функция для вызову синхронизации времени в многопоточном режиме.
   for(;;){
       delay(5000);
       int retu = timestampget();
@@ -79,7 +79,8 @@ void timesync(void *pvParameters) { // функция для вызову син
 void setup() {
     pinMode(2, OUTPUT); 
     Serial.begin(115200);
-
+    
+    // инициализация WIFI
     WiFi.begin(ssid, password);
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -92,11 +93,16 @@ void setup() {
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
 
+    // Создание таска для многозадачности
+    
     setTime(timestampget());
     xTaskCreatePinnedToCore (timesync,"TASK_1",4096,NULL, 1, NULL, 0);
 
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    
     timestamp = (int) millis() / 1000;
+    
+    // настройка библиотеки обработки часовых интервалов.
     night.timestamp = &timestamp;
     sunrise.timestamp = &timestamp;
     pday.timestamp = &timestamp;
